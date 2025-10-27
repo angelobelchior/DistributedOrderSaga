@@ -31,3 +31,4 @@ public static class MessageExtensions
                    $"Falha ao desserializar para o tipo {typeof(T).FullName}. JSON: {json}");
     }
 }
+

@@ -1,4 +1,5 @@
 using DistributedOrderSaga.Contracts.Models;
+using DistributedOrderSaga.Contracts.Models.Orders;
 
 namespace DistributedOrderSaga.Contracts.Commands.Orders;
 

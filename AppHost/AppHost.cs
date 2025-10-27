@@ -9,7 +9,7 @@ var rabbitmq = builder.AddRabbitMQ("messaging", username, password)
         .WithOtlpExporter()
     ;
 
-builder.AddProject<Projects.DistributedOrderSaga_Orchestration>("orchestration")
+var orchestration = builder.AddProject<Projects.DistributedOrderSaga_Orchestration>("orchestration")
     .WithReference(rabbitmq)
     .WaitFor(rabbitmq)
     .WithOtlpExporter()
@@ -35,6 +35,7 @@ builder.AddProject<Projects.DistributedOrderSaga_ShippingService>("shipping")
 
 builder.AddProject<Projects.DistributedOrderSaga_UI>("ui")
     .WithOtlpExporter()
+    .WithReference(orchestration)
     ;
 
 builder.Build().Run();

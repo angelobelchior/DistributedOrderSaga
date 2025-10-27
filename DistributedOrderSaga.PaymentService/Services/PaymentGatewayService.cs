@@ -1,4 +1,5 @@
 using DistributedOrderSaga.Contracts.Models;
+using DistributedOrderSaga.Contracts.Models.Orders;
 using DistributedOrderSaga.PaymentService.Models;
 
 namespace DistributedOrderSaga.PaymentService.Services;

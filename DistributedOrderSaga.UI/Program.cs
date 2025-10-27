@@ -1,26 +1,25 @@
-var builder = WebApplication.CreateBuilder(args);
+using DistributedOrderSaga.ServiceDefaults;
+using DistributedOrderSaga.UI.Components;
+using DistributedOrderSaga.UI.ExternalServices;
 
-// Add services to the container.
-builder.Services.AddRazorPages();
+var builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults();
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
+
+builder.Services.AddHttpClient<OrchestrationClient>(client =>
+{
+    client.BaseAddress = new Uri("https+http://orchestration");
+});
 
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-}
-
+app.UseExceptionHandler("/Error", createScopeForErrors: true);
+app.UseHsts();
 app.UseHttpsRedirection();
-
-app.UseRouting();
-
-app.UseAuthorization();
+app.UseAntiforgery();
 
 app.MapStaticAssets();
-app.MapRazorPages()
-    .WithStaticAssets();
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
 
 app.Run();

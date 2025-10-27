@@ -1,6 +1,6 @@
 using DistributedOrderSaga.Contracts;
 using DistributedOrderSaga.Contracts.Events.Payments;
-using DistributedOrderSaga.Orchestration.Models;
+using DistributedOrderSaga.Contracts.Models.Sagas;
 using DistributedOrderSaga.Orchestration.Repositories;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;

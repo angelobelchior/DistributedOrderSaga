@@ -1,5 +1,5 @@
+using DistributedOrderSaga.Contracts.Models.Sagas;
 using DistributedOrderSaga.Orchestration.Consumers;
-using DistributedOrderSaga.Orchestration.Models;
 using DistributedOrderSaga.Orchestration.Repositories;
 using DistributedOrderSaga.ServiceDefaults;
 using DistributedOrderSaga.Messaging;
@@ -26,7 +26,7 @@ app.UseHttpsRedirection();
 app.MapGet("/", () =>
     Results.Ok("Hello from Order Saga Service!"));
 
-app.MapGet("/saga/{orderId:guid}", (Guid orderId, SagaStateRepository repository) =>
+app.MapGet("api/v1/saga/{orderId:guid}", (Guid orderId, SagaStateRepository repository) =>
     {
         var state = repository.Get(orderId);
         return state is not null
@@ -37,7 +37,7 @@ app.MapGet("/saga/{orderId:guid}", (Guid orderId, SagaStateRepository repository
     .WithDescription("Obtém o estado completo de uma SAGA específica pelo OrderId")
     .WithOpenApi();
 
-app.MapGet("/saga", (SagaStateRepository repository, SagaStatus? status = null) => Results.Ok(
+app.MapGet("api/v1/saga", (SagaStateRepository repository, SagaStatus? status = null) => Results.Ok(
         (object?)(status is null
             ? repository.GetAll()
             : repository.GetByStatus(status.GetValueOrDefault()))))
@@ -45,7 +45,7 @@ app.MapGet("/saga", (SagaStateRepository repository, SagaStatus? status = null) 
     .WithDescription("Lista todas as SAGAs ou filtra por status")
     .WithOpenApi();
 
-app.MapGet("/saga/statistics", (SagaStateRepository queryService)
+app.MapGet("api/v1/saga/statistics", (SagaStateRepository queryService)
         => Results.Ok(queryService.GetStatistics()))
     .WithName("GetSagaStatistics")
     .WithDescription("Obtém estatísticas agregadas de todas as SAGAs")

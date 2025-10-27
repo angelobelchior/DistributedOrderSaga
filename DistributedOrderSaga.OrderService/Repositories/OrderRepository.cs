@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using DistributedOrderSaga.Contracts.Models;
+using DistributedOrderSaga.Contracts.Models.Orders;
 
 namespace DistributedOrderSaga.OrderService.Repositories;
 

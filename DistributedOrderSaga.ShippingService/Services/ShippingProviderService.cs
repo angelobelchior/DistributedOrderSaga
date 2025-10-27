@@ -1,4 +1,5 @@
 using DistributedOrderSaga.Contracts.Models;
+using DistributedOrderSaga.Contracts.Models.Orders;
 using DistributedOrderSaga.ShippingService.Models;
 
 namespace DistributedOrderSaga.ShippingService.Services;

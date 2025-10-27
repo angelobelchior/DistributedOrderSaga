@@ -1,4 +1,4 @@
-using DistributedOrderSaga.Orchestration.Models;
+using DistributedOrderSaga.Contracts.Models.Sagas;
 
 namespace DistributedOrderSaga.Orchestration.Repositories;
 

@@ -1,6 +1,7 @@
 using DistributedOrderSaga.Contracts;
 using DistributedOrderSaga.Contracts.Commands.Orders;
 using DistributedOrderSaga.Contracts.Models;
+using DistributedOrderSaga.Contracts.Models.Orders;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using DistributedOrderSaga.Messaging;

@@ -1,0 +1,239 @@
+﻿@page "/"
+@using DistributedOrderSaga.Contracts.Models.Sagas
+@using System.Linq
+@using DistributedOrderSaga.UI.ExternalServices
+@inject OrchestrationClient OrchestrationClient
+
+<PageTitle>Sagas</PageTitle>
+
+<h1>Sagas</h1>
+
+@if (_stats is not null)
+{
+	<div class="row g-3 mb-4">
+		<div class="col-6 col-md-2">
+			<div class="card text-center">
+				<div class="card-body">
+					<div class="fw-bold">Total</div>
+					<div class="fs-5">@_stats.Total</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-6 col-md-2">
+			<div class="card text-center">
+				<div class="card-body">
+					<div class="fw-bold">Concluídas</div>
+					<div class="fs-5 text-success">@_stats.Completed</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-6 col-md-2">
+			<div class="card text-center">
+				<div class="card-body">
+					<div class="fw-bold">Em progresso</div>
+					<div class="fs-5 text-primary">@_stats.InProgress</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-6 col-md-2">
+			<div class="card text-center">
+				<div class="card-body">
+					<div class="fw-bold">Canceladas</div>
+					<div class="fs-5 text-danger">@_stats.Cancelled</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-6 col-md-2">
+			<div class="card text-center">
+				<div class="card-body">
+					<div class="fw-bold">Compensadas</div>
+					<div class="fs-5 text-warning">@_stats.Compensated</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-6 col-md-2">
+			<div class="card text-center">
+				<div class="card-body">
+					<div class="fw-bold">Tempo médio (s)</div>
+					<div class="fs-5">@_stats.AverageCompletionTimeSeconds.ToString("0.0")</div>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+<div class="mb-3">
+	<label for="orderIdFilter" class="form-label">Filtrar por OrderId</label>
+	<div class="input-group">
+		<input id="orderIdFilter" class="form-control" placeholder="00000000-0000-0000-0000-000000000000"
+		       @bind="_filterOrderId"/>
+		<button class="btn btn-primary" @onclick="ApplyFilter" disabled="@_loading">Filtrar</button>
+		<button class="btn btn-outline-secondary" @onclick="ClearFilter" disabled="@_loading">Limpar</button>
+	</div>
+	@if (!string.IsNullOrWhiteSpace(_error))
+	{
+		<div class="text-danger small mt-2">@_error</div>
+	}
+</div>
+
+@if (_loading)
+{
+	<p>Carregando…</p>
+}
+else if (_sagas.Count == 0)
+{
+	<p>Nenhuma saga encontrada.</p>
+}
+else
+{
+	<div class="table-responsive">
+		<table class="table table-striped align-middle">
+			<thead>
+			<tr>
+				<th>OrderId</th>
+				<th>Status</th>
+				<th>Início</th>
+				<th>Última atualização</th>
+				<th>Pagamento aprovado?</th>
+				<th>Motivo cancelamento</th>
+			</tr>
+			</thead>
+			<tbody>
+			@foreach (var s in _sagas)
+			{
+				<tr>
+					<td><code>@s.Order.Id</code></td>
+					<td>@s.Status</td>
+					<td>@s.StartedAt.ToLocalTime()</td>
+					<td>@s.LastUpdatedAt.ToLocalTime()</td>
+					<td>@(s.PaymentApproved is null ? "—" : (s.PaymentApproved.Value ? "Sim" : "Não"))</td>
+					<td>@(string.IsNullOrWhiteSpace(s.CancellationReason) ? "—" : s.CancellationReason)</td>
+				</tr>
+
+				<tr class="table-light">
+					<td colspan="6">
+						<div class="fw-semibold mb-2">Histórico (@s.History.Count)</div>
+						@if (s.History.Count == 0)
+						{
+							<div class="text-muted">Sem eventos registrados.</div>
+						}
+						else
+						{
+							<div class="table-responsive small">
+								<table class="table table-sm mb-0">
+									<thead>
+									<tr>
+										<th>Quando</th>
+										<th>De</th>
+										<th>Para</th>
+										<th>Evento</th>
+										<th>Descrição</th>
+									</tr>
+									</thead>
+									<tbody>
+									@foreach (var ev in s.History.OrderBy(h => h.Timestamp))
+									{
+										<tr>
+											<td>@ev.Timestamp.ToLocalTime()</td>
+											<td>@ev.FromStatus</td>
+											<td>@ev.ToStatus</td>
+											<td>@ev.Event.Name</td>
+											<td>@ev.Event.Description</td>
+										</tr>
+									}
+									</tbody>
+								</table>
+							</div>
+						}
+					</td>
+				</tr>
+			}
+			</tbody>
+		</table>
+	</div>
+}
+
+@code {
+	private List<SagaState> _sagas = new();
+	private SagaStatistics? _stats;
+	private string? _filterOrderId;
+	private bool _loading;
+	private string? _error;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadAllAsync();
+		await LoadStatsAsync();
+	}
+
+	private async Task LoadAllAsync()
+	{
+		_loading = true;
+		_error = null;
+		try
+		{
+			var result = await OrchestrationClient.ListAllSagasAsync();
+			_sagas = result.OrderByDescending(s => s.LastUpdatedAt).ToList();
+		}
+		catch (Exception ex)
+		{
+			_error = $"Erro ao carregar sagas: {ex.Message}";
+			_sagas.Clear();
+		}
+		finally
+		{
+			_loading = false;
+		}
+	}
+
+	private async Task LoadStatsAsync()
+	{
+		try
+		{
+			_stats = await OrchestrationClient.GetStatisticsAsync();
+		}
+		catch
+		{
+			// ignore stats errors to not block the page
+		}
+	}
+
+	private async Task ApplyFilter()
+	{
+		_error = null;
+		_loading = true;
+		try
+		{
+			if (string.IsNullOrWhiteSpace(_filterOrderId))
+			{
+				await LoadAllAsync();
+				return;
+			}
+
+			if (!Guid.TryParse(_filterOrderId, out var id))
+			{
+				_error = "OrderId inválido. Informe um GUID.";
+				_sagas.Clear();
+				return;
+			}
+
+			var saga = await OrchestrationClient.GetSagaAsync(id);
+			_sagas = saga is null ? new() : new() { saga };
+		}
+		catch (Exception ex)
+		{
+			_error = $"Erro ao filtrar: {ex.Message}";
+			_sagas.Clear();
+		}
+		finally
+		{
+			_loading = false;
+		}
+	}
+
+	private async Task ClearFilter()
+	{
+		_filterOrderId = string.Empty;
+		await Task.WhenAll(LoadAllAsync(), LoadStatsAsync());
+	}
+}
