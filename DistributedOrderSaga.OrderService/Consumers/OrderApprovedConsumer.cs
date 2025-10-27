@@ -31,21 +31,19 @@ public class OrderApprovedConsumer(
                 channel: _channel,
                 consumerName: nameof(OrderApprovedConsumer),
                 deliverEventArgs: ea,
-                function: _ =>
+                function: async ct =>
                 {
                     var approveOrder = ea.Body.ToMessage<ApproveOrderCommand>();
-                    var order = repository.Get(approveOrder.Order.Id);
+                    var order = await repository.GetAsync(approveOrder.Order.Id, ct);
                     if (order is null)
                     {
                         logger.LogWarning("Order {OrderId} not found", approveOrder.Order.Id);
-                        return Task.CompletedTask;
+                        return;
                     }
 
                     order = order.ChangeStatus(OrderStatus.Approved);
-                    repository.Update(order);
+                    await repository.UpdateAsync(order, ct);
                     logger.LogInformation("Order {OrderId} approved", approveOrder.Order.Id);
-
-                    return Task.CompletedTask;
                 },
                 stoppingToken,
                 sendToDlq: false);

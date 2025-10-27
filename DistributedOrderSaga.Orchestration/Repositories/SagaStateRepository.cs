@@ -47,14 +47,13 @@ public class SagaStateRepository(ILogger<SagaStateRepository> logger)
     public SagaStatistics GetStatistics()
     {
         var states = GetAll().ToList();
-
         return new SagaStatistics
         {
             Total = states.Count,
             Completed = states.Count(s => s.Status == SagaStatus.Completed),
             InProgress = states.Count(s => s.Status is SagaStatus.AwaitingPayment or SagaStatus.PaymentApproved or SagaStatus.Shipping),
             Cancelled = states.Count(s => s.Status is SagaStatus.CancelledByPayment or SagaStatus.CancelledByShipping),
-            Compensated = states.Count(s => s.Status == SagaStatus.Compensated),
+            Compensated = states.Count(s => s.Status is SagaStatus.Compensated or SagaStatus.Compensating),
             AverageCompletionTimeSeconds = states
                 .Where(s => s.Status == SagaStatus.Completed)
                 .Select(s => (s.LastUpdatedAt - s.StartedAt).TotalSeconds)

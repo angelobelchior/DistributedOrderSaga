@@ -87,20 +87,21 @@ else if (_sagas.Count == 0)
 else
 {
 	<div class="table-responsive">
-		<table class="table table-striped align-middle">
-			<thead>
-			<tr>
-				<th>OrderId</th>
-				<th>Status</th>
-				<th>Início</th>
-				<th>Última atualização</th>
-				<th>Pagamento aprovado?</th>
-				<th>Motivo cancelamento</th>
-			</tr>
-			</thead>
-			<tbody>
-			@foreach (var s in _sagas)
-			{
+
+		@foreach (var s in _sagas)
+		{
+			<table class="table table-striped align-middle">
+				<thead>
+				<tr>
+					<th>OrderId</th>
+					<th>Status</th>
+					<th>Início</th>
+					<th>Última atualização</th>
+					<th>Pagamento aprovado?</th>
+					<th>Motivo cancelamento</th>
+				</tr>
+				</thead>
+				<tbody>
 				<tr>
 					<td><code>@s.Order.Id</code></td>
 					<td>@s.Status</td>
@@ -109,7 +110,6 @@ else
 					<td>@(s.PaymentApproved is null ? "—" : (s.PaymentApproved.Value ? "Sim" : "Não"))</td>
 					<td>@(string.IsNullOrWhiteSpace(s.CancellationReason) ? "—" : s.CancellationReason)</td>
 				</tr>
-
 				<tr class="table-light">
 					<td colspan="6">
 						<div class="fw-semibold mb-2">Histórico (@s.History.Count)</div>
@@ -147,9 +147,11 @@ else
 						}
 					</td>
 				</tr>
-			}
-			</tbody>
-		</table>
+				</tbody>
+			</table>
+			<hr/>
+		}
+
 	</div>
 }
 
@@ -236,4 +238,5 @@ else
 		_filterOrderId = string.Empty;
 		await Task.WhenAll(LoadAllAsync(), LoadStatsAsync());
 	}
+
 }

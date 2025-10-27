@@ -32,21 +32,19 @@ public class OrderCancelledConsumer(
                 channel: _channel,
                 consumerName: nameof(OrderCancelledConsumer),
                 deliverEventArgs: ea,
-                function: _ =>
+                function: async ct =>
                 {
                     var cancelOrder = ea.Body.ToMessage<CancelOrderCommand>();
-                    var order = repository.Get(cancelOrder.Order.Id);
+                    var order = await repository.GetAsync(cancelOrder.Order.Id, ct);
                     if (order is null)
                     {
                         logger.LogWarning("Order {OrderId} not found", cancelOrder.Order.Id);
-                        return Task.CompletedTask;
+                        return;
                     }
 
                     order = order.ChangeStatus(OrderStatus.Canceled);
-                    repository.Update(order);
+                    await repository.UpdateAsync(order, ct);
                     logger.LogInformation("Order {OrderId} canceled", cancelOrder.Order.Id);
-
-                    return Task.CompletedTask;
                 },
                 stoppingToken,
                 sendToDlq: false);

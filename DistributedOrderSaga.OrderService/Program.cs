@@ -33,25 +33,27 @@ app.MapPost("/orders", async (
     using var activity = activitySource.StartActivity(nameof(OrderCreatedEvent), ActivityKind.Producer);
 
     var order = viewModel.ToOrder();
-    repository.Insert(order);
+    await repository.InsertAsync(order, cancellationToken);
 
     var orderCreated = OrderCreatedEvent.Create(order);
     await publisher.PublishAsync("order_created", orderCreated, cancellationToken);
     return Results.Accepted($"/orders/{order.Id}", new { orderId = order.Id });
 });
 
-app.MapGet("/orders", (
-    [FromServices] OrderRepository repository) =>
+app.MapGet("/orders", async (
+    [FromServices] OrderRepository repository,
+    CancellationToken cancellationToken) =>
 {
-    var orders = repository.List();
+    var orders = await repository.ListAsync(cancellationToken);
     return Results.Ok(orders);
 });
 
-app.MapGet("/orders/{id:guid}", (
+app.MapGet("/orders/{id:guid}", async (
     Guid id,
-    [FromServices] OrderRepository repository) =>
+    [FromServices] OrderRepository repository,
+    CancellationToken cancellationToken) =>
 {
-    var order = repository.Get(id);
+    var order = await repository.GetAsync(id, cancellationToken);
     return order is null ? Results.NotFound() : Results.Ok(order);
 });
 
