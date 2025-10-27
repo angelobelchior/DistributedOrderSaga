@@ -1,6 +1,6 @@
 # Distributed Order Saga Demo
 
-> Parte dessa documentação foi inscrita com o auxílio do chatGPT
+> Parte dessa documentação foi escrita com o auxílio do chatGPT
 
 ### O que é uma SAGA?
 
