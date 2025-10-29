@@ -35,17 +35,17 @@ public class OrderShippedConsumer(
                 function: async ct =>
                 {
                     var orderShipped = ea.Body.ToMessage<OrderShippedEvent>();
-                    var saga = sagaStateRepository.Get(orderShipped.Order.Id);
-                    
+                    var saga = await sagaStateRepository.GetAsync(orderShipped.Order.Id, ct);
+
                     if (saga == null || saga.Status == SagaStatus.Completed)
                         return;
 
                     sagaStateUpdater.TransitionToStatus(
                         saga,
-                        SagaStatus.Completed, 
+                        SagaStatus.Completed,
                         SagaEvent.OrderShipped);
-                    
-                    sagaStateRepository.Update(saga);
+
+                    await sagaStateRepository.UpdateAsync(saga, ct);
 
                     var approveOrder = ApproveOrderCommand.Create(orderShipped.Order);
                     await publisher.PublishAsync("approve_order", approveOrder, ct);

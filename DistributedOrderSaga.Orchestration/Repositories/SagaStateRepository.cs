@@ -7,22 +7,35 @@ public class SagaStateRepository(ILogger<SagaStateRepository> logger)
 {
     private readonly ConcurrentDictionary<Guid, SagaState> _states = new();
 
-    public SagaState? Get(Guid orderId)
-        => _states.GetValueOrDefault(orderId);
+    public async Task<SagaState?> GetAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        await Task.Delay(Random.Shared.Next(200, 500), cancellationToken);
+        return _states.GetValueOrDefault(orderId);
+    }
 
-    public IEnumerable<SagaState> GetAll()
-        => _states.Values.OrderByDescending(s => s.StartedAt);
+    public async Task<IEnumerable<SagaState>> GetAllAsync(CancellationToken cancellationToken)
+    {
+        await Task.Delay(Random.Shared.Next(200, 500), cancellationToken);
+        return _states.Values.OrderByDescending(s => s.StartedAt);
+    }
 
-    public IEnumerable<SagaState> GetByStatus(SagaStatus status)
-        => _states.Values
+    public async Task<IEnumerable<SagaState>> GetByStatusAsync(SagaStatus status, CancellationToken cancellationToken)
+    {
+        await Task.Delay(Random.Shared.Next(200, 500), cancellationToken);
+        return _states.Values
             .Where(s => s.Status == status)
             .OrderByDescending(s => s.StartedAt);
+    }
 
-    public bool Exists(Guid orderId)
-        => _states.ContainsKey(orderId);
-
-    public void Save(SagaState state)
+    public async Task<bool> ExistsAsync(Guid orderId, CancellationToken cancellationToken)
     {
+        await Task.Delay(Random.Shared.Next(200, 500), cancellationToken);
+        return _states.ContainsKey(orderId);
+    }
+
+    public async Task SaveAsync(SagaState state, CancellationToken cancellationToken)
+    {
+        await Task.Delay(Random.Shared.Next(200, 500), cancellationToken);
         if (!_states.TryAdd(state.Order.Id, state))
         {
             logger.LogWarning("SAGA state for OrderId={OrderId} already exists", state.Order.Id);
@@ -32,8 +45,9 @@ public class SagaStateRepository(ILogger<SagaStateRepository> logger)
         logger.LogInformation("Saved SAGA state for OrderId={OrderId}", state.Order.Id);
     }
 
-    public void Update(SagaState state)
+    public async Task UpdateAsync(SagaState state, CancellationToken cancellationToken)
     {
+        await Task.Delay(Random.Shared.Next(200, 500), cancellationToken);
         if (!_states.ContainsKey(state.Order.Id))
         {
             logger.LogWarning("SAGA state not found for OrderId={OrderId}", state.Order.Id);
@@ -43,10 +57,11 @@ public class SagaStateRepository(ILogger<SagaStateRepository> logger)
         _states[state.Order.Id] = state;
         logger.LogDebug("Updated SAGA state for OrderId={OrderId}", state.Order.Id);
     }
-    
-    public SagaStatistics GetStatistics()
+
+    public async Task<SagaStatistics> GetStatisticsAsync(CancellationToken cancellationToken)
     {
-        var states = GetAll().ToList();
+        await Task.Delay(Random.Shared.Next(200, 500), cancellationToken);
+        var states = (await GetAllAsync(cancellationToken)).ToList();
         return new SagaStatistics
         {
             Total = states.Count,

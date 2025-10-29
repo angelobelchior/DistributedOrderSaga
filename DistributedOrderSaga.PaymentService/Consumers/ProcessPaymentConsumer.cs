@@ -38,7 +38,7 @@ public class ProcessPaymentConsumer(
                 {
                     var command = ea.Body.ToMessage<ProcessPaymentCommand>();
 
-                    var payment = paymentRepository.GetByOrderId(command.Order.Id);
+                    var payment = await paymentRepository.GetByOrderIdAsync(command.Order.Id, ct);
 
                     if (payment is not null && payment.IsAlreadyProcessed(PaymentStatus.Approved))
                     {
@@ -49,9 +49,9 @@ public class ProcessPaymentConsumer(
                     }
 
                     logger.LogInformation("Processing payment for order {OrderId}", command.Order.Id);
-                    var result = paymentGatewayService.ProcessPayment(command.Order.Payment);
+                    var result = await paymentGatewayService.ProcessPaymentAsync(command.Order.Payment, ct);
                     payment = Payment.Create(command.Order.Id, result.Status);
-                    paymentRepository.Insert(payment);
+                    await paymentRepository.InsertAsync(payment, ct);
 
                     if (result.Status is PaymentStatus.Declined or PaymentStatus.Failed)
                     {

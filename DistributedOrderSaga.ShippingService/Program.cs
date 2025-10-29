@@ -21,10 +21,16 @@ app.UseHttpsRedirection();
 app.MapGet("/", () =>
     Results.Ok("Hello from Shipping Service!"));
 
-app.MapGet("/shipments/{orderId:guid}", (Guid orderId, ShippingRepository repository) =>
+app.MapGet("/shipments/{orderId:guid}", async
+(
+    Guid orderId,
+    ShippingRepository repository,
+    CancellationToken cancellationToken) =>
 {
-    var shipment = repository.GetByOrderId(orderId);
-    return shipment is not null ? Results.Ok(shipment) : Results.NotFound();
+    var shipment = await repository.GetByOrderIdAsync(orderId, cancellationToken);
+    return shipment is not null
+        ? Results.Ok(shipment)
+        : Results.NotFound();
 });
 
 app.Run();

@@ -39,7 +39,7 @@ public class ShipOrderConsumer(
                     var command = ea.Body.ToMessage<ShipOrderCommand>();
                     logger.LogInformation("[ShippingService] Processing shipment: {@shipOrder}", command);
 
-                    var existingShipment = shippingRepository.GetByOrderId(command.Order.Id);
+                    var existingShipment = await shippingRepository.GetByOrderIdAsync(command.Order.Id, ct);
                     if (existingShipment is not null && existingShipment.IsAlreadyProcessed())
                     {
                         logger.LogWarning("[ShippingService] Shipment already processed for order {OrderId}", 
@@ -47,7 +47,7 @@ public class ShipOrderConsumer(
                         return;
                     }
 
-                    var result = shippingProviderService.ShipOrder(command.Order);
+                    var result = await shippingProviderService.ShipOrderAsync(command.Order, ct);
                     if (result.Status == ShipmentStatus.Shipped)
                     {
                         var shipment = existingShipment is null
@@ -55,9 +55,9 @@ public class ShipOrderConsumer(
                             : existingShipment.ChangeStatus(result.Status).WithTrackingCode(result.TrackingCode!);
 
                         if (existingShipment is null)
-                            shippingRepository.Insert(shipment);
+                            await shippingRepository.InsertAsync(shipment, ct);
                         else
-                            shippingRepository.Update(shipment);
+                            await shippingRepository.UpdateAsync(shipment, ct);
 
                         var orderShipped = OrderShippedEvent.Create(command.Order);
                         await publisher.PublishAsync("order_shipped", orderShipped, ct);
@@ -72,9 +72,9 @@ public class ShipOrderConsumer(
                             : existingShipment.ChangeStatus(ShipmentStatus.Failed);
 
                         if (existingShipment is null)
-                            shippingRepository.Insert(shipment);
+                            await shippingRepository.InsertAsync(shipment, ct);
                         else
-                            shippingRepository.Update(shipment);
+                            await shippingRepository.UpdateAsync(shipment, ct);
 
                         var reason = result.Message ?? "Shipping provider declined the shipment";
                         var evt = OrderShippingFailedEvent.Create(command.Order, reason);

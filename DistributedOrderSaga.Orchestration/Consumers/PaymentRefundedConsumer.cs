@@ -31,21 +31,21 @@ public class PaymentRefundedConsumer(
                 channel: _channel,
                 consumerName: "PaymentRefundedConsumer",
                 deliverEventArgs: ea,
-                function: _ =>
+                function: async ct =>
                 {
                     var evt = ea.Body.ToMessage<PaymentRefundedEvent>();
 
-                    var saga = sagaStateRepository.Get(evt.Order.Id);
+                    var saga = await sagaStateRepository.GetAsync(evt.Order.Id, ct);
                     if (saga == null)
                     {
                         logger.LogWarning("Saga not found for order {OrderId}", evt.Order.Id);
-                        return Task.CompletedTask;
+                        return;
                     }
 
                     if (saga.Status == SagaStatus.Compensated)
                     {
                         logger.LogInformation("Refund already processed for order {OrderId}", evt.Order.Id);
-                        return Task.CompletedTask;
+                        return;
                     }
 
                     logger.LogInformation("Payment refunded for order {OrderId}", evt.Order.Id);
@@ -53,9 +53,7 @@ public class PaymentRefundedConsumer(
                         SagaStatus.Compensated, 
                         SagaEvent.PaymentRefunded);
                     
-                    sagaStateRepository.Update(saga);
-
-                    return Task.CompletedTask;
+                    await sagaStateRepository.UpdateAsync(saga, ct);
                 },
                 stoppingToken,
                 sendToDlq: false);

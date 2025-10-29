@@ -37,7 +37,7 @@ public class PaymentApprovedConsumer(
                 {
                     var evt = ea.Body.ToMessage<PaymentApprovedEvent>();
 
-                    var saga = sagaStateRepository.Get(evt.Order.Id);
+                    var saga = await sagaStateRepository.GetAsync(evt.Order.Id, ct);
                     if (saga == null)
                     {
                         logger.LogWarning("Saga not found for order {OrderId}", evt.Order.Id);
@@ -62,7 +62,7 @@ public class PaymentApprovedConsumer(
                     
                     sagaStateUpdater.UpdatePaymentInfo(saga, evt.Id, true);
                     
-                    sagaStateRepository.Update(saga);
+                    await sagaStateRepository.UpdateAsync(saga, ct);
 
                     var shipOrder = ShipOrderCommand.Create(evt.Order);
                     await publisher.PublishAsync("ship_order", shipOrder, ct);

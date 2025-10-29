@@ -107,7 +107,7 @@ else
 					<td>@s.Status</td>
 					<td>@s.StartedAt.ToLocalTime()</td>
 					<td>@s.LastUpdatedAt.ToLocalTime()</td>
-					<td>@(s.PaymentApproved is null ? "—" : (s.PaymentApproved.Value ? "Sim" : "Não"))</td>
+					<td>@(s.PaymentApproved is null ? "—" : s.PaymentApproved.Value ? "Sim" : "Não")</td>
 					<td>@(string.IsNullOrWhiteSpace(s.CancellationReason) ? "—" : s.CancellationReason)</td>
 				</tr>
 				<tr class="table-light">

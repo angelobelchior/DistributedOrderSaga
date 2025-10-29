@@ -36,17 +36,18 @@ public class OrderCreatedConsumer(
                 {
                     var evt = ea.Body.ToMessage<OrderCreatedEvent>();
 
-                    if (!sagaStateRepository.Exists(evt.Order.Id))
+                    var exists = await sagaStateRepository.ExistsAsync(evt.Order.Id, ct);
+                    if (!exists)
                     {
                         var state = SagaState.CreateFromOrder(evt.Order);
-                        sagaStateRepository.Save(state);
+                        await sagaStateRepository.SaveAsync(state, ct);
 
                         sagaStateUpdater.TransitionToStatus(
                             state,
                             SagaStatus.AwaitingPayment,
                             SagaEvent.ProcessPayment);
                         
-                        sagaStateRepository.Update(state);
+                        await sagaStateRepository.UpdateAsync(state, ct);
 
                         var processPayment = ProcessPaymentCommand.Create(evt.Order);
                         await publisher.PublishAsync("process_payment", processPayment, ct);

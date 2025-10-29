@@ -1,4 +1,3 @@
-using DistributedOrderSaga.Contracts.Models;
 using DistributedOrderSaga.Contracts.Models.Orders;
 using DistributedOrderSaga.PaymentService.Models;
 
@@ -6,8 +5,11 @@ namespace DistributedOrderSaga.PaymentService.Services;
 
 public class PaymentGatewayService
 {
-    public PaymentGatewayResult ProcessPayment(PaymentInfo payment)
+    public async Task<PaymentGatewayResult> ProcessPaymentAsync(PaymentInfo payment,
+        CancellationToken cancellationToken)
     {
+        await Task.Delay(Random.Shared.Next(500, 800), cancellationToken);
+
         if (string.IsNullOrWhiteSpace(payment.CardNumber) || payment.CardNumber.Length < 12)
             return new PaymentGatewayResult(PaymentStatus.Failed,
                 "Número do cartão inválido.");
@@ -23,8 +25,10 @@ public class PaymentGatewayService
             : new PaymentGatewayResult(PaymentStatus.Declined, "Transação recusada pelo banco.");
     }
 
-    public PaymentGatewayResult ProcessRefund(Order order)
+    public async Task<PaymentGatewayResult> ProcessRefundAsync(Order order, CancellationToken cancellationToken)
     {
+        await Task.Delay(Random.Shared.Next(500, 800), cancellationToken);
+
         var success = Random.Shared.NextDouble() <= 0.7;
         return success
             ? new PaymentGatewayResult(PaymentStatus.Approved, "Estorno realizado com sucesso.")

@@ -26,27 +26,33 @@ app.UseHttpsRedirection();
 app.MapGet("/", () =>
     Results.Ok("Hello from Order Saga Service!"));
 
-app.MapGet("api/v1/saga/{orderId:guid}", (Guid orderId, SagaStateRepository repository) =>
-    {
-        var state = repository.Get(orderId);
-        return state is not null
-            ? Results.Ok(state)
-            : Results.NotFound(new { message = $"SAGA state not found for OrderId={orderId}" });
-    })
+app.MapGet("api/v1/saga/{orderId:guid}",
+        async (
+            Guid orderId,
+            SagaStateRepository repository, CancellationToken cancellationToken) =>
+        {
+            var state = await repository.GetAsync(orderId, cancellationToken);
+            return state is not null
+                ? Results.Ok(state)
+                : Results.NotFound(new { message = $"SAGA state not found for OrderId={orderId}" });
+        })
     .WithName("GetSagaState")
     .WithDescription("Obtém o estado completo de uma SAGA específica pelo OrderId")
     .WithOpenApi();
 
-app.MapGet("api/v1/saga", (SagaStateRepository repository, SagaStatus? status = null) => Results.Ok(
-        (object?)(status is null
-            ? repository.GetAll()
-            : repository.GetByStatus(status.GetValueOrDefault()))))
+app.MapGet("api/v1/saga", async (
+        SagaStateRepository repository, 
+        SagaStatus? status,
+        CancellationToken cancellationToken) => Results.Ok(
+        status is null
+            ? await repository.GetAllAsync(cancellationToken)
+            : await repository.GetByStatusAsync(status.GetValueOrDefault(), cancellationToken)))
     .WithName("GetAllSagas")
     .WithDescription("Lista todas as SAGAs ou filtra por status")
     .WithOpenApi();
 
-app.MapGet("api/v1/saga/statistics", (SagaStateRepository queryService)
-        => Results.Ok(queryService.GetStatistics()))
+app.MapGet("api/v1/saga/statistics", async (SagaStateRepository queryService, CancellationToken cancellationToken)
+        => Results.Ok(await queryService.GetStatisticsAsync(cancellationToken)))
     .WithName("GetSagaStatistics")
     .WithDescription("Obtém estatísticas agregadas de todas as SAGAs")
     .WithOpenApi();

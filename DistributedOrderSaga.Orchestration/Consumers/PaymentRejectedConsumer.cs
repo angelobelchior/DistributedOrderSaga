@@ -36,7 +36,7 @@ public class PaymentRejectedConsumer(
                 function: async ct =>
                 {
                     var evt = ea.Body.ToMessage<PaymentRejectedEvent>();
-                    var saga = sagaStateRepository.Get(evt.Order.Id);
+                    var saga = await sagaStateRepository.GetAsync(evt.Order.Id, ct);
                     if (saga is not { Status: < SagaStatus.CancelledByPayment })
                     {
                         logger.LogWarning("Payment rejection already processed for order {OrderId}",
@@ -52,7 +52,7 @@ public class PaymentRejectedConsumer(
                         SagaStatus.CancelledByPayment,
                         SagaEvent.PaymentRejected(reason));
 
-                    sagaStateRepository.Update(saga);
+                    await sagaStateRepository.UpdateAsync(saga, ct);
 
                     var cancelOrder = CancelOrderCommand.Create(evt.Order, reason);
                     await publisher.PublishAsync("cancel_order", cancelOrder, ct);

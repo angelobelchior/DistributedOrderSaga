@@ -37,7 +37,7 @@ public class OrderShippingFailedConsumer(
                 {
                     var evt = ea.Body.ToMessage<OrderShippingFailedEvent>();
 
-                    var saga = sagaStateRepository.Get(evt.Order.Id);
+                    var saga = await sagaStateRepository.GetAsync(evt.Order.Id, ct);
                     if (saga is not { Status: < SagaStatus.Compensating })
                         return;
 
@@ -52,7 +52,7 @@ public class OrderShippingFailedConsumer(
                     await publisher.PublishAsync("refund_payment", refund, ct);
                     sagaStateUpdater.AddMetadata(saga, "RefundPaymentId", refund.Id);
 
-                    sagaStateRepository.Update(saga);
+                    await sagaStateRepository.UpdateAsync(saga, ct);
 
                     var cancel = CancelOrderCommand.Create(evt.Order, reason);
                     await publisher.PublishAsync("cancel_order", cancel, ct);

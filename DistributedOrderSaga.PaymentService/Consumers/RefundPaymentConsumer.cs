@@ -15,7 +15,7 @@ public class RefundPaymentConsumer(
     PaymentRepository paymentRepository,
     PaymentGatewayService paymentGatewayService,
     BaseMessageConsumer messageConsumer,
-    Publisher publisher, 
+    Publisher publisher,
     ILogger<RefundPaymentConsumer> logger)
     : BackgroundService
 {
@@ -37,26 +37,26 @@ public class RefundPaymentConsumer(
                 function: async ct =>
                 {
                     var command = ea.Body.ToMessage<RefundPaymentCommand>();
-                    var payment = paymentRepository.GetByOrderId(command.Order.Id);
+                    var payment = await paymentRepository.GetByOrderIdAsync(command.Order.Id, ct);
                     if (payment is null)
                     {
                         var paymentNotFoundEvent = PaymentRefundFailedEvent.Create(
-                            command.Order, 
+                            command.Order,
                             $"Payment not found for Order Id {command.Order.Id}");
                         await publisher.PublishAsync("payment_refund_failed", paymentNotFoundEvent, ct);
                         logger.LogWarning("Payment not found for Order Id {OrderId}", command.Order.Id);
                         return;
                     }
-                    
+
                     if (!payment.IsAlreadyProcessed(PaymentStatus.Refunded))
                     {
-                        var result = paymentGatewayService.ProcessRefund(command.Order);
+                        var result = await paymentGatewayService.ProcessRefundAsync(command.Order, ct);
                         if (result.Status is PaymentStatus.Failed)
                         {
                             var errorMessage = !string.IsNullOrEmpty(result.ErrorMessage)
                                 ? result.ErrorMessage
                                 : $"Payment not refunded for Order Id {command.Order.Id}";
-                            
+
                             var paymentRefundFailed = PaymentRefundFailedEvent.Create(
                                 command.Order,
                                 errorMessage);
@@ -66,7 +66,7 @@ public class RefundPaymentConsumer(
                         }
 
                         payment = payment.ChangeStatus(PaymentStatus.Refunded);
-                        paymentRepository.Update(payment);
+                        await paymentRepository.UpdateAsync(payment, ct);
                         logger.LogInformation("Payment refunded for Order Id {OrderId}", command.Order.Id);
                     }
 

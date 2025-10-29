@@ -6,19 +6,24 @@ namespace DistributedOrderSaga.ShippingService.Repositories;
 public class ShippingRepository
 {
     private readonly ConcurrentDictionary<Guid, Shipment> _shipments = new();
-    
-    public Shipment Insert(Shipment shipment)
+
+    public async Task<Shipment> InsertAsync(Shipment shipment, CancellationToken cancellationToken)
     {
+        await Task.Delay(Random.Shared.Next(200, 500), cancellationToken);
         _shipments[shipment.Id] = shipment;
         return shipment;
     }
-    
-    public Shipment Update(Shipment shipment)
+
+    public async Task<Shipment> UpdateAsync(Shipment shipment, CancellationToken cancellationToken)
     {
+        await Task.Delay(Random.Shared.Next(200, 500), cancellationToken);
         _shipments[shipment.Id] = shipment;
         return shipment;
     }
-    
-    public Shipment? GetByOrderId(Guid orderId)
-        => _shipments.Values.FirstOrDefault(s => s.OrderId == orderId);
+
+    public async Task<Shipment?> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        await Task.Delay(Random.Shared.Next(200, 500), cancellationToken);
+        return _shipments.Values.FirstOrDefault(s => s.OrderId == orderId);
+    }
 }
